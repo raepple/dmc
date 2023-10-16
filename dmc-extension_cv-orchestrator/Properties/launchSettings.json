@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "dmc_extension_cv_orchestrator": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7207",
+      "launchBrowser": false
+    }
+  }
+}

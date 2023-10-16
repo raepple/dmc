@@ -1,0 +1,62 @@
+## Remeber to set environment ('local' or 'azure-function') in VS Code Status bar (bottom right).
+
+## Test call to retrieve JWT
+
+POST https://login.microsoftonline.com/{{aadV2TenantId}}/oauth2/v2.0/token
+Content-Type: application/x-www-form-urlencoded
+
+client_id={{aadV2ClientId}}
+&scope={{aadV2AppUri}}/.default
+&client_secret={{aadV2ClientSecret}}
+&grant_type=client_credentials
+
+###
+
+POST {{endpoint}}{{endpointPath}}/RequestPictureAnalysis?code={{function-host-key}}
+# Authorization: Bearer {{$aadV2Token appOnly}}
+Content-Type: application/json
+
+< ./dmc-extension_cv-orchestrator/Test/AnalyzePictureRequest.json
+
+###
+
+GET {{endpoint}}{{endpointPath}}/TakePictureRequest?code={{function-host-key}}
+Authorization: Bearer {{$aadV2Token appOnly}}
+
+
+###
+
+GET {{endpoint}}{{endpointPath}}/TakePictureRequestBase64?code={{function-host-key}}&plant=BRP01&sfc=BRP014
+Ocp-Apim-Subscription-Key: {{apim-subscription-key}}
+Authorization: Bearer {{$aadV2Token appOnly}}
+
+###
+
+GET {{endpoint}}{{endpointPath}}/TakePictureRequest?code={{function-host-key}}&plant=BRP01&sfc=BRP014
+Ocp-Apim-Subscription-Key: {{apim-subscription-key}}
+Authorization: Bearer {{$aadV2Token appOnly}}
+
+
+###
+
+GET {{endpoint}}{{endpointPath}}/TakePictureRequest?code={{function-host-key}}&plant=BRP01&sfc=BRP015
+Ocp-Apim-Subscription-Key: {{apim-subscription-key}}
+Authorization: Bearer {{$aadV2Token appOnly}}
+
+
+###
+
+GET {{endpoint}}{{endpointPath}}/TakePictureRequest?code={{function-host-key}}&plant=BRP01&sfc=BRP017
+Ocp-Apim-Subscription-Key: {{apim-subscription-key}}
+Authorization: {{$aadV2Token appOnly}}
+
+###
+
+GET {{endpoint}}{{endpointPath}}/TakePictureAndAnalyzeRequest?code={{function-host-key}}&plant=BRP01&sfc=BRP014
+Ocp-Apim-Subscription-Key: {{apim-subscription-key}}
+Authorization: Bearer {{$aadV2Token appOnly}}
+
+###
+
+GET {{endpoint}}{{endpointPath}}/openapi/v3.yaml
+Ocp-Apim-Subscription-Key: {{apim-subscription-key}}

@@ -92,11 +92,6 @@ variable "extension_subnet_address_prefix" {
   default     = ["10.20.1.0/24"]
 }
 
-variable "btp_subaccount_id" {
-  description = "Business Technology Platform subaccount id"
-  type        = string
-}
-
 variable "btp_username" {
   description = "Business Technology Platform username"
   type        = string
@@ -135,4 +130,5 @@ variable "dm_service_name" {
 variable "destination_service_name" {
   description = "Destination service name"
   type        = string
+  default     = "destination"
 }

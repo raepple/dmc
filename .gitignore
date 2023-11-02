@@ -42,7 +42,7 @@ obj/
 *.tfstate
 *.tfstate.*
 *.tfvars
-
+*.hcl
 
 # Azurite
 __azurite_*.json

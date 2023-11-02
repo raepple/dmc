@@ -177,7 +177,3 @@ resource "azurerm_api_management_api_diagnostic" "apimdiag" {
   }
 }
 
-output "AzureAPIMURL" {
-  description = "Azure APIM URL"
-  value       = azurerm_api_management.apim.gateway_url
-}

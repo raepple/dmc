@@ -56,8 +56,3 @@ data "azurerm_function_app_host_keys" "fnkeys" {
   name                = azurerm_windows_function_app.fn.name
   resource_group_name = azurerm_resource_group.rg.name
 }
-
-output "func_app_principal_id" {
-  description = "Function app managed identity principal id"
-  value = azurerm_windows_function_app.fn.identity.0.principal_id
-}

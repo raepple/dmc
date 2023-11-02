@@ -20,23 +20,3 @@ resource "azuread_application" "app" {
 resource "azuread_application_password" "appsecret" {
   application_object_id = azuread_application.app.object_id
 }
-
-output "DMExtension_app_URI" {
-  description = "DM extension app uri"
-  value       = azuread_application.app.identifier_uris
-}
-
-output "EntraID_client_id" {
-  description = "DM extension client id"
-  value       = azuread_application.app.application_id
-}
-
-output "EntraID_client_secret" {
-  description = "DM extension client secret"
-  value       = nonsensitive(azuread_application_password.appsecret.value)
-}
-
-output "EntraID_oauth_token_url" {
-  description = "Entra ID tenant token url"
-  value       = "https://login.microsoftonline.com/${data.azurerm_client_config.current.tenant_id}/oauth2/v2.0/token"
-}

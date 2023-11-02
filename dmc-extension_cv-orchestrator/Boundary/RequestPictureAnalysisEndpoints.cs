@@ -66,9 +66,8 @@ namespace DmcExtension.CvOrchestrator.Boundary
                 // Forward message (unchanged) to Event Hub.
                 await outputEvents.AddAsync(new EventData(requestBody));
 
-                string responseMessage = "Successfully received picture for analysis.";
-
-                return new OkObjectResult(responseMessage);
+                // Return HTTP 202 (Accepted) to SAP DM
+                return new AcceptedResult();
             } catch (Exception e) {
                 log.LogError(e.StackTrace);
                 return new BadRequestObjectResult(e.Message);

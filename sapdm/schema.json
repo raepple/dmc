@@ -1,0 +1,53 @@
+{
+    "type": "object",
+    "properties": {
+        "context": {
+			"type": "object",
+			"properties": {
+				"sfc": {
+					"format": "",
+					"description": "",
+					"type": "string"
+				},
+				"plant": {
+					"format": "",
+					"description": "",
+					"type": "string"
+				},
+				"source": {
+					"format": "",
+					"description": "",
+					"type": "string"
+				},
+				"inspectionViewName": {
+					"format": "",
+					"description": "",
+					"type": "string"
+				}
+			},
+			"description": "DM context data",
+			"required": [
+				"sfc",
+				"plant"
+			]
+        },
+        "callback": {
+            "format": "",
+            "description": "Callback URL in DM to send the inspection result",
+            "type": "string"
+        },
+        "fileContent": {
+            "format": "",
+            "description": "Base64 encoded image to be processed",
+            "type": "string"
+        },
+        "fileContentType": {
+            "format": "",
+            "description": "Content type of the base64-encoded image data, e.g. image/jpg",
+            "type": "string"
+        }
+    },
+    "required": [
+        "fileContent"
+    ]
+}

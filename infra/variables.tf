@@ -10,13 +10,13 @@ variable "resourceFunction" {
 }
 
 variable "environment" {
-  description = "Environment for all resources"
+  description = "Environment for all resources (e.g. dev, test, prod)"
   type        = string
   default     = "dev"
 }
 
 variable "region" {
-  description = "Region for all resources"
+  description = "Region short name in resource name"
   type        = string
   default     = "we"
 }
@@ -29,6 +29,12 @@ variable "location" {
 
 variable "tags" {
     type = map
+}
+
+variable "white_list_ip" {
+  description = "List of IP addresses to whitelist for the storage account access"
+  type        =   list(string)
+  default = []
 }
 
 variable "publisher_email" {
@@ -63,7 +69,7 @@ variable "cs_sku" {
 }
 
 variable "sp_sku" {
-  description = "The pricing tier of the Service Plan"
+  description = "The pricing tier of the Function Service Plan"
   default     = "EP1" 
   type        = string
 }
@@ -87,9 +93,15 @@ variable "apim_subnet_address_prefix" {
 }
 
 variable "extension_subnet_address_prefix" {
-  description = "Address prefix for the extension components subnet"
+  description = "Address prefix for the extension application subnet"
   type        = list(string)
   default     = ["10.20.1.0/24"]
+}
+
+variable "pep_subnet_address_prefix" {
+  description = "Address prefix for the private endpoint subnet"
+  type        = list(string)
+  default     = ["10.20.2.0/24"]
 }
 
 variable "btp_username" {

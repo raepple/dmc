@@ -25,7 +25,7 @@ resource "cloudfoundry_service_instance" "destinationsi" {
             URL                      = "${azurerm_api_management.apim.gateway_url}"
             ProxyType                = "Internet"
             Authentication           = "OAuth2ClientCredentials"
-            clientId                 = "${azuread_application.app.application_id}"
+            clientId                 = "${azuread_application.app.client_id}"
             clientSecret             = "${azuread_application_password.appsecret.value}"
             tokenServiceURL          = "https://login.microsoftonline.com/${data.azurerm_client_config.current.tenant_id}/oauth2/v2.0/token"
             scope                    = "api://${local.appName}/.default"

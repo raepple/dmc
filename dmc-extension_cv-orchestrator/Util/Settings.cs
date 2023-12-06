@@ -24,6 +24,7 @@ namespace DmcExtension.CvOrchestrator.Util
         public static string DmInspectionLogEndpoint => lazyDmInspectionLogEndpoint.Value;
         public static Lazy<string> lazyPictureStorageAccountEndpoint = new Lazy<string>(InitializeFromEnvironmentVariable("PICTURE_STORAGE_ACCOUNT_ENDPOINT"));
         public static string PictureStorageAccountEndpoint => lazyPictureStorageAccountEndpoint.Value;
+       public static string PictureBlobContainerName = "raw-pictures";
 
         private static string InitializeFromEnvironmentVariable(string variableName)
         {

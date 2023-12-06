@@ -18,5 +18,9 @@ resource "azuread_application" "app" {
 }
 
 resource "azuread_application_password" "appsecret" {
-  application_object_id = azuread_application.app.object_id
+  application_id = azuread_application.app.id
+}
+
+output "SAPDMExtensionAppSecret" {
+  value = nonsensitive(azuread_application_password.appsecret.value)
 }

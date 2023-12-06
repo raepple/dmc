@@ -20,6 +20,8 @@ resource "azurerm_api_management" "apim" {
   }
 
   tags = var.tags
+
+  depends_on = [ azurerm_subnet_network_security_group_association.apimsubnetNsg ]
 }
 
 resource "azurerm_api_management_api" "apimapi" {
@@ -38,7 +40,7 @@ resource "azurerm_api_management_backend" "apimbackend" {
   resource_group_name = azurerm_resource_group.rg.name
   api_management_name = azurerm_api_management.apim.name
   protocol            = "http"
-  url                 = "https://${azurerm_windows_function_app.fn.name}.azurewebsites.net/api/"
+  url                 = "https://${azurerm_windows_function_app.fn.default_hostname}/api"
 }
 
 resource "azurerm_api_management_named_value" "apimnv" {
@@ -60,12 +62,12 @@ resource "azurerm_api_management_api_policy" "apimBasePolicy" {
   xml_content = <<XML
   <policies>
       <inbound>
-          <base />
-          <set-backend-service id="apim-generated-policy" backend-id="${azurerm_api_management_backend.apimbackend.name}" />
+          <base />  
+          <set-backend-service backend-id="${azurerm_api_management_backend.apimbackend.name}" />
           <validate-jwt header-name="Authorization" failed-validation-httpcode="401" failed-validation-error-message="Invalid token">
             <openid-config url="https://login.microsoftonline.com/${data.azurerm_client_config.current.tenant_id}/v2.0/.well-known/openid-configuration" />
             <audiences>
-                <audience>${azuread_application.app.application_id}</audience>
+                <audience>${azuread_application.app.client_id}</audience>
             </audiences>
           </validate-jwt>
           <set-query-parameter name="code" exists-action="override">

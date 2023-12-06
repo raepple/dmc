@@ -20,7 +20,7 @@ namespace DmcExtension.CvOrchestrator.Boundary
     {
         [FunctionName("PictureAnalysisResultToDmcPublisher")]
         public async static Task PictureAnalysisResultToDmcPublisherFromEventHub(
-            [EventHubTrigger("picture-analysis-results", Connection = "EventHubConnectionAppSetting", ConsumerGroup = "to-dmc-publisher")] string eventHubMessage,
+            [EventHubTrigger("picture-analysis-results", Connection = "EventHubConnection", ConsumerGroup = "to-dmc-publisher")] string eventHubMessage,
             ILogger log)
         {
             log.LogInformation("C# EventHub trigger function (PictureAnalysisResultToDmcPublisherFromEventHub) processed a request.");

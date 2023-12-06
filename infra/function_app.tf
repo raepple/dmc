@@ -18,9 +18,13 @@ locals {
     "DM_OAUTH_CLIENT_ID" = format("%s%s%s", "@Microsoft.KeyVault(VaultName=", azurerm_key_vault.kv.name, ";SecretName=DMOAuthClientID)")
     "DM_OAUTH_CLIENT_SECRET" = format("%s%s%s", "@Microsoft.KeyVault(VaultName=", azurerm_key_vault.kv.name, ";SecretName=DMOAuthClientSecret)")
     "DM_INSPECTION_LOG_ENDPOINT" = format("%s%s", cloudfoundry_service_key.dmkey.credentials.public-api-endpoint, "/aiml/v1/inspectionLog")
-    "PICTURE_STORAGE_ACCOUNT_ENDPOINT" = azurerm_storage_account.sa.primary_blob_endpoint
-    "AzureWebJobsPICTURE_STORAGE_ACCOUNT_ENDPOINT__serviceUri" = azurerm_storage_account.sa.primary_blob_endpoint
-    "EventHubConnectionAppSetting" = azurerm_eventhub_namespace.eh.default_primary_connection_string
+    "PICTURE_STORAGE_ACCOUNT_ENDPOINT": azurerm_storage_account.sa.primary_blob_endpoint
+    "AzureWebJobsStorageAccountExtension__serviceUri" = azurerm_storage_account.sa.primary_blob_endpoint
+    "AzureWebJobsStorage__accountName" = local.storageAccountName
+    "EventHubConnection__fullyQualifiedNamespace" = format("%s%s", azurerm_eventhub_namespace.eh.name, ".servicebus.windows.net")
+    "WEBSITE_CONTENTOVERVNET" = "1"
+    "WEBSITE_CONTENTSHARE" = lower(local.functionAppName)
+    "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING" = format("%s%s%s", "@Microsoft.KeyVault(VaultName=", azurerm_key_vault.kv.name, ";SecretName=StorageAccountConnectionString)")
   }
 }
 
@@ -29,16 +33,19 @@ resource "azurerm_windows_function_app" "fn" {
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
 
-  storage_account_name       = azurerm_storage_account.sa.name
-  storage_account_access_key = azurerm_storage_account.sa.primary_access_key
-  service_plan_id            = azurerm_service_plan.sp.id
+  storage_account_name = azurerm_storage_account.sa.name
+  storage_uses_managed_identity = true
+  service_plan_id      = azurerm_service_plan.sp.id
+
+  virtual_network_subnet_id = azurerm_subnet.extensionsubnet.id
 
   identity {
     type = "SystemAssigned"
   }
 
   site_config {
-    application_insights_key = azurerm_application_insights.appinsights.instrumentation_key
+    application_insights_key         = azurerm_application_insights.appinsights.instrumentation_key
+    vnet_route_all_enabled = true
   }
 
   app_settings = local.appsettings
@@ -47,7 +54,7 @@ resource "azurerm_windows_function_app" "fn" {
 
   lifecycle {
     ignore_changes = [
-      app_settings["WEBSITE_RUN_FROM_PACKAGE"], # prevent TF reporting configuration drift after app code is deployed
+      app_settings["WEBSITE_RUN_FROM_PACKAGE"] # prevent TF reporting configuration drift after app code is deployed
     ]
   }
 }

@@ -9,10 +9,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
+using Azure.Storage.Blobs;
 using Microsoft.Azure.CognitiveServices.Vision.CustomVision.Prediction;
 using DmcExtension.CvOrchestrator.Util;
 using System.Collections.Generic;
+using Azure.Identity;
+using Azure.Storage.Blobs.Models;
 
 namespace DmcExtension.CvOrchestrator.Boundary
 {
@@ -31,8 +33,9 @@ namespace DmcExtension.CvOrchestrator.Boundary
 
         [FunctionName("PictureAnalysisProcessor")]
         public static async Task PictureAnalysisProcessorFromEventHub(
-            [EventHubTrigger("picture-analysis-requests", Connection = "EventHubConnectionAppSetting")] string eventHubMessage,
-            [EventHub("picture-analysis-results", Connection = "EventHubConnectionAppSetting")] IAsyncCollector<EventData> outputEvents,
+            [EventHubTrigger("picture-analysis-requests", Connection = "EventHubConnection")] string eventHubMessage,
+            [EventHub("picture-analysis-results", Connection = "EventHubConnection")] IAsyncCollector<EventData> outputEvents,
+            IBinder binder,
             ILogger log)
         {
             try
@@ -41,17 +44,19 @@ namespace DmcExtension.CvOrchestrator.Boundary
 
                 // TODO: Validate request body, invalid requests should be dropped.
                 var messageJson = JsonNode.Parse(eventHubMessage)!.AsObject();
+                var fileName = messageJson["FileName"];
 
-                var fileContentBase64 = messageJson["fileContent"];
+                var attribute = new BlobAttribute($"{Settings.PictureBlobContainerName}/{fileName}", FileAccess.Read);
+                attribute.Connection = "StorageAccountExtension";
 
-                // Decode base64 string to byte array and create stream.
-                byte[] fileContent = Convert.FromBase64String(fileContentBase64.AsValue().ToString());
-                Stream stream = new MemoryStream(fileContent);
-
+                var blob = await binder.BindAsync<Stream>(attribute);
+                log.LogInformation("Downloaded " + fileName + " from blob storage.");
+                              
                 // Call Custom Vision Service to get predictions
-                var imagePrediction = CustomVisionPredictionClient.DetectImage(new System.Guid(Settings.CustomVisionProjectGuid), Settings.CustomVisionModelName, stream);
-
-                //Map predictions to DMC data structure.
+                var imagePrediction = CustomVisionPredictionClient.DetectImage(new System.Guid(Settings.CustomVisionProjectGuid), Settings.CustomVisionModelName, blob);
+                log.LogInformation("Predictions received from Custom Vision Service for " + fileName);
+                
+                // Map predictions to DMC data structure.
                 //TODO: What happens if we have no predictions?
                 //TODO: Do we want to filter out predictions with low probability?
                 List<object> predictions = new List<object>();
@@ -64,7 +69,7 @@ namespace DmcExtension.CvOrchestrator.Boundary
                         predictionScore = p.Probability,
                         predictionBoundingBoxCoords = GetPredictionBoundingBoxCoordsAsJsonString(p)                        
                     });
-                    log.LogInformation("Non-conformance found with prediction value " + p.Probability);
+                    log.LogInformation("Non-conformance in " + fileName + " found with prediction value " + p.Probability);
                 }
                 messageJson.Add("predictions", JsonValue.Parse(JsonSerializer.Serialize(predictions)));
 

@@ -32,8 +32,8 @@ variable "tags" {
 }
 
 variable "white_list_ip" {
-  description = "List of IP addresses to whitelist for the storage account access"
-  type        =   list(string)
+  description = "List of IP addresses to whitelist for keyvault and storage account access"
+  type        = list(string)
   default = []
 }
 
@@ -69,8 +69,13 @@ variable "cs_sku" {
 }
 
 variable "sp_sku" {
-  description = "The pricing tier of the Function Service Plan"
-  default     = "EP1" 
+  description = "The SKU for the Function Service Plan"
+  default     = "P1v3" 
+  type        = string
+}
+
+variable "dotnet_version" {
+  default     = "v6.0"
   type        = string
 }
 

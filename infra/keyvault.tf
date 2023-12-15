@@ -1,3 +1,12 @@
+locals {
+  kvsecrets = {
+    "CustomVisionKey" = azurerm_cognitive_account.cs.primary_access_key
+    "DMOAuthClientID" = cloudfoundry_service_key.dmkey.credentials.uaa_clientid
+    "DMOAuthClientSecret" = cloudfoundry_service_key.dmkey.credentials.uaa_clientsecret
+    "FunctionAppHostKey" = data.azurerm_function_app_host_keys.fnkeys.default_function_key
+  }
+}
+
 resource "azurerm_key_vault" "kv" {
   name                        = local.kvName
   location                    = azurerm_resource_group.rg.location
@@ -22,25 +31,9 @@ resource "azurerm_key_vault" "kv" {
   tags = var.tags
 }
 
-locals {
-  kvsecrets = {
-    "CustomVisionKey" = azurerm_cognitive_account.cs.primary_access_key
-    "DMOAuthClientID" = cloudfoundry_service_key.dmkey.credentials.uaa_clientid
-    "DMOAuthClientSecret" = cloudfoundry_service_key.dmkey.credentials.uaa_clientsecret
-    "FunctionAppHostKey" = data.azurerm_function_app_host_keys.fnkeys.default_function_key
-    "StorageAccountConnectionString" = azurerm_storage_account.sa.primary_connection_string
-  }
-}
-
 resource "azurerm_key_vault_secret" "kvsecrets" {
   for_each     = local.kvsecrets
   name         = each.key
   value        = each.value
-  key_vault_id = azurerm_key_vault.kv.id
-}
-
-# needed for reference in API management
-data "azurerm_key_vault_secret" "fnhk" {
-  name         = "FunctionAppHostKey"
   key_vault_id = azurerm_key_vault.kv.id
 }

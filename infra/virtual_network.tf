@@ -14,8 +14,6 @@ resource "azurerm_subnet" "apimsubnet" {
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = var.apim_subnet_address_prefix
-  private_endpoint_network_policies_enabled     = false
-  private_link_service_network_policies_enabled = false
 }
 
 resource "azurerm_subnet" "extensionsubnet" {
@@ -23,9 +21,7 @@ resource "azurerm_subnet" "extensionsubnet" {
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = var.extension_subnet_address_prefix
-  private_endpoint_network_policies_enabled     = false
-  private_link_service_network_policies_enabled = false
-
+ 
   delegation {
     name = "serverFarms"
 
@@ -41,8 +37,11 @@ resource "azurerm_subnet" "pepsubnet" {
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = var.pep_subnet_address_prefix
-  private_endpoint_network_policies_enabled     = true
-  private_link_service_network_policies_enabled = false
+  private_endpoint_network_policies_enabled = true
+  service_endpoints = [
+    "Microsoft.Storage",
+    "Microsoft.Web",
+  ]  
 }
 
 resource "azurerm_network_security_group" "nsgapim" {

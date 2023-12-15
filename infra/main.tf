@@ -3,7 +3,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.81.0"
+      version = "~> 3.83.0"
     }
     azuread = {
       source  = "hashicorp/azuread"
@@ -11,7 +11,7 @@ terraform {
     }
     btp = {
       source  = "SAP/btp"
-      version = "0.5.0-beta1"
+      version = "1.0.0-rc1"
     }    
     cloudfoundry = {
       source = "cloudfoundry-community/cloudfoundry"
@@ -19,7 +19,7 @@ terraform {
     }
     random = {
       source  = "hashicorp/random"
-      version = "3.5.1"
+      version = "3.6.0"
     }
   }
 
@@ -62,7 +62,6 @@ locals {
   apimName            = "${var.prefix}-${var.resourceFunction}-apim-${var.environment}-${var.region}"
   apiName             = "${var.prefix}-${var.resourceFunction}-api-${var.region}"
   apiPath             = "${var.resourceFunction}"
-  appName             = "${var.prefix}-${var.resourceFunction}"
   
   kvName              = "${var.prefix}-${var.resourceFunction}-kv-${var.environment}-${var.region}"
   eventHubName        = "${var.prefix}-${var.resourceFunction}-eh-${var.environment}-${var.region}"

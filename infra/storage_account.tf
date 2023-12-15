@@ -5,11 +5,13 @@ resource "azurerm_storage_account" "sa" {
   account_tier                    = "Standard"
   account_replication_type        = "LRS"
   min_tls_version                 = "TLS1_2"
+  allow_nested_items_to_be_public = false
     
   network_rules {           
-    default_action = "Deny"
-    bypass         = ["AzureServices"]
-    ip_rules       = var.white_list_ip
+    default_action              = "Deny"
+    bypass                      = ["AzureServices"]
+    virtual_network_subnet_ids  = []
+    ip_rules                    = var.white_list_ip
   }
 
   identity {
@@ -17,13 +19,6 @@ resource "azurerm_storage_account" "sa" {
   }
 
   tags = var.tags
-}
-
-# create a file share for the function content
-resource "azurerm_storage_share" "share" {
-  name                 = lower(local.functionAppName)
-  storage_account_name = azurerm_storage_account.sa.name
-  quota                = 50
 }
 
 # create blob containers for the scenario

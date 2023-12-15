@@ -28,7 +28,7 @@ resource "cloudfoundry_service_instance" "destinationsi" {
             clientId                 = "${azuread_application.app.client_id}"
             clientSecret             = "${azuread_application_password.appsecret.value}"
             tokenServiceURL          = "https://login.microsoftonline.com/${data.azurerm_client_config.current.tenant_id}/oauth2/v2.0/token"
-            scope                    = "api://${local.appName}/.default"
+            scope                    = "api://${local.applicationName}/.default"
           }
         ]
       }

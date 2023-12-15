@@ -50,7 +50,7 @@ resource "azurerm_api_management_named_value" "apimnv" {
   display_name        = "${azurerm_windows_function_app.fn.name}-key"
   secret              = true
   value_from_key_vault  {
-    secret_id = data.azurerm_key_vault_secret.fnhk.id
+    secret_id = azurerm_key_vault_secret.kvsecrets["FunctionAppHostKey"].id
   }
 }
 
@@ -115,67 +115,3 @@ resource "azurerm_api_management_api_operation" "apimrpaop" {
     status_code = 200
   }
 }
-
-# Create a logger to send logs to Application Insights
-resource "azurerm_api_management_logger" "apimlogger" {
-  name                = "apimlogger"
-  api_management_name = azurerm_api_management.apim.name
-  resource_group_name = azurerm_resource_group.rg.name
-  resource_id         = azurerm_application_insights.appinsights.id
-
-  application_insights {
-    instrumentation_key = azurerm_application_insights.appinsights.instrumentation_key
-  }
-}
-
-# Create a diagnostic setting to send logs to Application Insights
-resource "azurerm_api_management_api_diagnostic" "apimdiag" {
-  identifier               = "applicationinsights"
-  resource_group_name      = azurerm_resource_group.rg.name
-  api_management_name      = azurerm_api_management.apim.name
-  api_name                 = azurerm_api_management_api.apimapi.name
-  api_management_logger_id = azurerm_api_management_logger.apimlogger.id
-
-  sampling_percentage       = 5.0
-  always_log_errors         = true
-  log_client_ip             = true
-  verbosity                 = "verbose"
-  http_correlation_protocol = "W3C"
-
-  frontend_request {
-    body_bytes = 32
-    headers_to_log = [
-      "content-type",
-      "accept",
-      "origin",
-    ]
-  }
-
-  frontend_response {
-    body_bytes = 32
-    headers_to_log = [
-      "content-type",
-      "content-length",
-      "origin",
-    ]
-  }
-
-  backend_request {
-    body_bytes = 32
-    headers_to_log = [
-      "content-type",
-      "accept",
-      "origin",
-    ]
-  }
-
-  backend_response {
-    body_bytes = 32
-    headers_to_log = [
-      "content-type",
-      "content-length",
-      "origin",
-    ]
-  }
-}
-

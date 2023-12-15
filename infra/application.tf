@@ -3,7 +3,7 @@ resource "random_uuid" "app_scope_id" {}
 # Create Azure AD App Registration for DM extension
 resource "azuread_application" "app" {
   display_name = "DM Visual Inspection Extension"
-  identifier_uris  = ["api://${local.appName}"]
+  identifier_uris  = ["api://${local.applicationName}"]
   api {
     requested_access_token_version = 2
     oauth2_permission_scope {
@@ -19,8 +19,4 @@ resource "azuread_application" "app" {
 
 resource "azuread_application_password" "appsecret" {
   application_id = azuread_application.app.id
-}
-
-output "SAPDMExtensionAppSecret" {
-  value = nonsensitive(azuread_application_password.appsecret.value)
 }

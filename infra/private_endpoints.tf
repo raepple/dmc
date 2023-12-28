@@ -66,6 +66,25 @@ resource "azurerm_private_endpoint" "fnapp_private_endpoint" {
 
   private_dns_zone_group {
     name                 = "fnapp-group"
-    private_dns_zone_ids = [azurerm_private_dns_zone.private_dns_zone["function_app"].id]
+    private_dns_zone_ids = [azurerm_private_dns_zone.private_dns_zone["fnapp"].id]
+  }
+}
+
+resource "azurerm_private_endpoint" "cognitiveservices_private_endpoint" {
+  name                = "${local.csName}-pep"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  subnet_id           = azurerm_subnet.pepsubnet.id
+
+  private_service_connection {
+    name                           = "${local.csName}-psc"
+    private_connection_resource_id = azurerm_cognitive_account.cs.id
+    is_manual_connection           = false
+    subresource_names              = ["account"]
+  }
+
+  private_dns_zone_group {
+    name                 = "cs-group"
+    private_dns_zone_ids = [azurerm_private_dns_zone.private_dns_zone["cs"].id]
   }
 }

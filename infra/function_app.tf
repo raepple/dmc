@@ -30,6 +30,8 @@ resource "azurerm_windows_function_app" "fn" {
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
 
+  public_network_access_enabled = false
+
   storage_account_name = azurerm_storage_account.sa.name
   storage_uses_managed_identity = true
   service_plan_id      = azurerm_service_plan.sp.id
@@ -60,7 +62,10 @@ resource "azurerm_windows_function_app" "fn" {
 
   lifecycle {
     ignore_changes = [
-      app_settings["WEBSITE_RUN_FROM_PACKAGE"] # prevent TF reporting configuration drift after app code is deployed
+      app_settings["WEBSITE_RUN_FROM_PACKAGE"], # prevent TF reporting configuration drift after app code is deployed
+      app_settings["AzureWebJobsStorage__accountName"],
+      tags,
+      virtual_network_subnet_id # see https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/linux_web_app#virtual_network_subnet_id
     ]
   }
 }
@@ -69,6 +74,8 @@ resource "azurerm_windows_function_app" "fn" {
 resource "azurerm_app_service_virtual_network_swift_connection" "network_integration" {
   app_service_id = azurerm_windows_function_app.fn.id
   subnet_id      = azurerm_subnet.extensionsubnet.id
+
+  depends_on = [azurerm_subnet.extensionsubnet, azurerm_windows_function_app.fn]
 }
 
 resource "azurerm_monitor_diagnostic_setting" "diag_func" {

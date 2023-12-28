@@ -109,11 +109,14 @@ locals {
     table = {
       name = "privatelink.table.core.windows.net"
     }  
-    function_app = {
+    fnapp = {
       name = "privatelink.azurewebsites.net"
     }
     kv = {
       name = "privatelink.vaultcore.azure.net"
+    }
+    cs = {
+      name = "privatelink.cognitiveservices.azure.com"
     }
   }  
 }

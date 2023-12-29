@@ -2,7 +2,7 @@ locals {
   appsettings = {
     "COGNITIVE_SERVICES_CUSTOM_VISION_ENDPOINT" = azurerm_cognitive_account.cs.endpoint
     "COGNITIVE_SERVICES_CUSTOM_VISION_SUBSCRIPTION_KEY" = format("%s%s%s", "@Microsoft.KeyVault(VaultName=", azurerm_key_vault.kv.name, ";SecretName=CustomVisionKey)")
-    "COGNITIVE_SERVICES_CUSTOM_VISION_PROJECT_GUID" = "1ad542fa-e828-48f1-bc07-e5ca8000b278"
+    "COGNITIVE_SERVICES_CUSTOM_VISION_PROJECT_GUID" = var.cs_projectid
     "COGNITIVE_SERVICES_CUSTOM_VISION_MODEL_NAME" = "Iteration1"
     "DM_TOKEN_ENDPOINT" = format("%s%s",cloudfoundry_service_key.dmkey.credentials.uaa_url,"/oauth/token")
     "DM_OAUTH_CLIENT_ID" = format("%s%s%s", "@Microsoft.KeyVault(VaultName=", azurerm_key_vault.kv.name, ";SecretName=DMOAuthClientID)")
@@ -12,6 +12,7 @@ locals {
     "AzureWebJobsStorageAccountExtension__serviceUri" = azurerm_storage_account.sa.primary_blob_endpoint
     "AzureWebJobsStorage__accountName" = local.storageAccountName
     "EventHubConnection__fullyQualifiedNamespace" = format("%s%s", azurerm_eventhub_namespace.eh.name, ".servicebus.windows.net")    
+    "WEBSITE_RUN_FROM_PACKAGE" = format("%s%s", azurerm_storage_account.sa.primary_blob_endpoint, "deploy/dmext.zip")
   }
 }
 
@@ -62,7 +63,6 @@ resource "azurerm_windows_function_app" "fn" {
 
   lifecycle {
     ignore_changes = [
-      app_settings["WEBSITE_RUN_FROM_PACKAGE"], # prevent TF reporting configuration drift after app code is deployed
       app_settings["AzureWebJobsStorage__accountName"],
       tags,
       virtual_network_subnet_id # see https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/linux_web_app#virtual_network_subnet_id
@@ -95,4 +95,8 @@ resource "azurerm_monitor_diagnostic_setting" "diag_func" {
 data "azurerm_function_app_host_keys" "fnkeys" {
   name                = azurerm_windows_function_app.fn.name
   resource_group_name = azurerm_resource_group.rg.name
+}
+
+output "function_app_name" {
+  value = azurerm_windows_function_app.fn.name
 }

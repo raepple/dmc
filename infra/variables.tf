@@ -74,6 +74,11 @@ variable "sp_sku" {
   type        = string
 }
 
+variable "cs_projectid" {
+  description = "The Custom Vision project ID"
+  type        = string
+}
+
 variable "dotnet_version" {
   default     = "v6.0"
   type        = string

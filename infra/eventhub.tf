@@ -5,6 +5,13 @@ resource "azurerm_eventhub_namespace" "eh" {
   sku                 = var.eh_sku
   capacity            = 1
 
+  # allow traffic only from the private endpoint
+  public_network_access_enabled = false
+
+  identity {
+    type = "SystemAssigned"
+  }
+
   tags = var.tags
 }
 

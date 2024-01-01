@@ -118,6 +118,9 @@ locals {
     cs = {
       name = "privatelink.cognitiveservices.azure.com"
     }
+    eh = {
+      name = "privatelink.servicebus.windows.net"
+    }
   }  
 }
 

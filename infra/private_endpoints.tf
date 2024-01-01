@@ -88,3 +88,22 @@ resource "azurerm_private_endpoint" "cognitiveservices_private_endpoint" {
     private_dns_zone_ids = [azurerm_private_dns_zone.private_dns_zone["cs"].id]
   }
 }
+
+resource "azurerm_private_endpoint" "eventhub_private_endpoint" {
+  name                = "${local.eventHubName}-pep"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  subnet_id           = azurerm_subnet.pepsubnet.id
+
+  private_service_connection {
+    name                           = "${local.eventHubName}-psc"
+    private_connection_resource_id = azurerm_eventhub_namespace.eh.id
+    is_manual_connection           = false
+    subresource_names              = ["namespace"]
+  }
+
+  private_dns_zone_group {
+    name                 = "eh-group"
+    private_dns_zone_ids = [azurerm_private_dns_zone.private_dns_zone["eh"].id]
+  }
+}

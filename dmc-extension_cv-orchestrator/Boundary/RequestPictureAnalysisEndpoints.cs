@@ -35,6 +35,8 @@ namespace DmcExtension.CvOrchestrator.Boundary
             log.LogInformation("C# HTTP trigger function (PostRequestPictureAnalysis) processed a request.");
 
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+            log.LogInformation($"Received message from SAP DM: {requestBody}");
+
             return await RequestPictureAnalysisDelegate(requestBody, outputEvents, binder, log);
         }
 
@@ -46,7 +48,6 @@ namespace DmcExtension.CvOrchestrator.Boundary
         {
             try {
                 // TODO: Validate request
-                
                 var requestModel = JsonSerializer.Deserialize<PictureAnalysisRequestModel>(requestBody, new JsonSerializerOptions(JsonSerializerDefaults.Web));
                 var plantId = requestModel.Context?.Plant ?? "unknown";
                 var fileContent = Convert.FromBase64String(requestModel.FileContent);
@@ -55,10 +56,12 @@ namespace DmcExtension.CvOrchestrator.Boundary
                 var timeStamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
                 var fileName = $"{plantId}_{timeStamp}.jpg";
 
-                var attribute = new BlobAttribute($"{Settings.PictureBlobContainerName}/{fileName}", FileAccess.Write);
-                attribute.Connection = "StorageAccountExtension";
+                var attribute = new BlobAttribute($"{Settings.PictureBlobContainerName}/{fileName}", FileAccess.Write)
+                {
+                    Connection = "StorageAccountExtension"
+                };
 
-                using(var blob = await binder.BindAsync<Stream>(attribute))
+                using (var blob = await binder.BindAsync<Stream>(attribute))
                 {
                     blob.Write(fileContent);
                 }

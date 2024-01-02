@@ -50,11 +50,11 @@ namespace DmcExtension.CvOrchestrator.Boundary
                 attribute.Connection = "StorageAccountExtension";
 
                 var blob = await binder.BindAsync<Stream>(attribute);
-                log.LogInformation("Downloaded " + fileName + " from blob storage.");
+                log.LogInformation($"Downloaded {fileName} from blob storage.");
                               
                 // Call Custom Vision Service to get predictions
                 var imagePrediction = CustomVisionPredictionClient.DetectImage(new System.Guid(Settings.CustomVisionProjectGuid), Settings.CustomVisionModelName, blob);
-                log.LogInformation("Predictions received from Custom Vision Service for " + fileName);
+                log.LogInformation($"Predictions received from Custom Vision Service for {fileName}");
                 
                 // Map predictions to DMC data structure.
                 //TODO: What happens if we have no predictions?

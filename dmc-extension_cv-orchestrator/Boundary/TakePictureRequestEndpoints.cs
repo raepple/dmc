@@ -22,12 +22,9 @@ using Azure;
 using Azure.Identity;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
-using Azure.Storage.Blobs.Specialized;
 
-using System.Net.Http.Headers;
 using System.Net.Http;
 using System.Security.Cryptography;
-using System.Web;
 
 namespace DmcExtension.CvOrchestrator.Boundary
 {

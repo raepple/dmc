@@ -30,12 +30,16 @@ namespace DmcExtension.CvOrchestrator.Boundary
 
             // TODO: Validate request
             var messageJson = JsonNode.Parse(eventHubMessage)!.AsObject();
+            log.LogInformation($"Raw message from EventHub: {messageJson}.");
 
-            plantId = messageJson?["context"]?["plant"]?.ToString() ?? plantId;
-            sfcId = messageJson?["context"]?["sfc"]?.ToString() ?? sfcId;
+            plantId = messageJson?["Context"]?["Plant"]?.ToString() ?? plantId;
+            sfcId = messageJson?["Context"]?["Sfc"]?.ToString() ?? sfcId;
             
+            log.LogInformation($"Received message for plant {plantId} and SFC {sfcId}");
+
             var dmUri = GetDmUri(plantId, sfcId);
             using HttpClient dmClient = GetConfiguredHttpClient();
+            log.LogInformation($"Successfully created DM client");
 
             var dmRequestBody = new StringContent(eventHubMessage, System.Text.Encoding.UTF8, "application/json");
             log.LogInformation($"Sending response to DM via URI {dmUri}.");
@@ -72,7 +76,6 @@ namespace DmcExtension.CvOrchestrator.Boundary
 
             tokenClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authHeaderBase64);
             var jsonContent = new StringContent("grant_type=client_credentials", System.Text.Encoding.UTF8, "application/x-www-form-urlencoded");
-
 
             var json = await tokenClient.PostAsync(tokenEndpointUrl, jsonContent);
 

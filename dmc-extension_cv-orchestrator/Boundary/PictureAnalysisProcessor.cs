@@ -1,20 +1,14 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
 using Azure.Messaging.EventHubs;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Azure.Storage.Blobs;
 using Microsoft.Azure.CognitiveServices.Vision.CustomVision.Prediction;
 using DmcExtension.CvOrchestrator.Util;
 using System.Collections.Generic;
-using Azure.Identity;
-using Azure.Storage.Blobs.Models;
 
 namespace DmcExtension.CvOrchestrator.Boundary
 {
@@ -44,18 +38,15 @@ namespace DmcExtension.CvOrchestrator.Boundary
 
                 // TODO: Validate request body, invalid requests should be dropped.
                 var messageJson = JsonNode.Parse(eventHubMessage)!.AsObject();
-                var fileName = messageJson["FileName"];
-
-                var attribute = new BlobAttribute($"{Settings.PictureBlobContainerName}/{fileName}", FileAccess.Read);
-                attribute.Connection = "StorageAccountExtension";
-
-                var blob = await binder.BindAsync<Stream>(attribute);
-                log.LogInformation($"Downloaded {fileName} from blob storage.");
-                              
-                // Call Custom Vision Service to get predictions
-                var imagePrediction = CustomVisionPredictionClient.DetectImage(new System.Guid(Settings.CustomVisionProjectGuid), Settings.CustomVisionModelName, blob);
-                log.LogInformation($"Predictions received from Custom Vision Service for {fileName}");
                 
+                // Read picture from blob storage
+                string fileName = messageJson?["FileName"]?.ToString();
+                Stream pictureBlob = Util.Storage.ReadPicture(binder, log, fileName).Result;
+
+                // Call Custom Vision Service to get predictions
+                var imagePrediction = CustomVisionPredictionClient.DetectImage(new System.Guid(Settings.CustomVisionProjectGuid), Settings.CustomVisionModelName, pictureBlob);
+                log.LogInformation("Predictions received from Custom Vision Service");
+
                 // Map predictions to DMC data structure.
                 //TODO: What happens if we have no predictions?
                 //TODO: Do we want to filter out predictions with low probability?
@@ -67,9 +58,9 @@ namespace DmcExtension.CvOrchestrator.Boundary
                         predictionClass = GetDmcPredictionClass(p.TagName),
                         ncCode = GetDmcNcCode(p.TagName),
                         predictionScore = p.Probability,
-                        predictionBoundingBoxCoords = GetPredictionBoundingBoxCoordsAsJsonString(p)                        
+                        predictionBoundingBoxCoords = GetPredictionBoundingBoxCoordsAsJsonString(p)
                     });
-                    log.LogInformation("Non-conformance in " + fileName + " found with prediction value " + p.Probability);
+                    log.LogInformation($"Non-conformance found with prediction value {p.Probability}");
                 }
                 messageJson.Add("predictions", JsonValue.Parse(JsonSerializer.Serialize(predictions)));
 

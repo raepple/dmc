@@ -1,11 +1,9 @@
-using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.Extensions.Logging;
 using System;
 
 namespace DmcExtension.CvOrchestrator.Util
 {
     public static class Settings
-    {  
+    {
         private static Lazy<string> lazyCustomVisionEndpoint = new Lazy<string>(InitializeFromEnvironmentVariable("COGNITIVE_SERVICES_CUSTOM_VISION_ENDPOINT"));
         public static string CustomVisionEndpoint => lazyCustomVisionEndpoint.Value;
         private static Lazy<string> lazyCustomVisionKey = new Lazy<string>(InitializeFromEnvironmentVariable("COGNITIVE_SERVICES_CUSTOM_VISION_SUBSCRIPTION_KEY"));
@@ -24,7 +22,7 @@ namespace DmcExtension.CvOrchestrator.Util
         public static string DmInspectionLogEndpoint => lazyDmInspectionLogEndpoint.Value;
         public static Lazy<string> lazyPictureStorageAccountEndpoint = new Lazy<string>(InitializeFromEnvironmentVariable("PICTURE_STORAGE_ACCOUNT_ENDPOINT"));
         public static string PictureStorageAccountEndpoint => lazyPictureStorageAccountEndpoint.Value;
-       public static string PictureBlobContainerName = "raw-pictures";
+        public static string PictureBlobContainerName = "raw-pictures";
 
         private static string InitializeFromEnvironmentVariable(string variableName)
         {
@@ -33,7 +31,6 @@ namespace DmcExtension.CvOrchestrator.Util
                 Console.WriteLine($"Environment variable {variableName} must be specified.");
             return retVal;
         }
-
     }
 }
 

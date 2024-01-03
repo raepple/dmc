@@ -13,8 +13,6 @@ using Microsoft.OpenApi.Models;
 using DmcExtension.CvOrchestrator.Model;
 using System.Text.Json;
 using DmcExtension.CvOrchestrator.Util;
-using Azure.Storage.Blobs;
-using Azure.Identity;
 using System.Text;
 
 namespace DmcExtension.CvOrchestrator.Boundary

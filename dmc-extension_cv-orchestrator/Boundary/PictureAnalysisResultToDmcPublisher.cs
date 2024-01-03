@@ -1,18 +1,14 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
-using Azure.Messaging.EventHubs;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
 using System.Net.Http.Headers;
 using System.Net.Http;
 using DmcExtension.CvOrchestrator.Util;
+using DmcExtension.CvOrchestrator.Model;
 
 namespace DmcExtension.CvOrchestrator.Boundary
 {
@@ -21,31 +17,41 @@ namespace DmcExtension.CvOrchestrator.Boundary
         [FunctionName("PictureAnalysisResultToDmcPublisher")]
         public async static Task PictureAnalysisResultToDmcPublisherFromEventHub(
             [EventHubTrigger("picture-analysis-results", Connection = "EventHubConnection", ConsumerGroup = "to-dmc-publisher")] string eventHubMessage,
+            IBinder binder,
             ILogger log)
         {
             log.LogInformation("C# EventHub trigger function (PictureAnalysisResultToDmcPublisherFromEventHub) processed a request.");
-
-            var plantId = "unknown";
-            var sfcId = "unknown";
-
-            // TODO: Validate request
-            var messageJson = JsonNode.Parse(eventHubMessage)!.AsObject();
-            log.LogInformation($"Raw message from EventHub: {messageJson}.");
-
-            plantId = messageJson?["Context"]?["Plant"]?.ToString() ?? plantId;
-            sfcId = messageJson?["Context"]?["Sfc"]?.ToString() ?? sfcId;
             
-            log.LogInformation($"Received message for plant {plantId} and SFC {sfcId}");
+            // TODO: Validate request
+            var requestModel = JsonSerializer.Deserialize<PictureAnalysisRequestModel>(eventHubMessage, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            log.LogInformation($"Raw message from EventHub: {requestModel}.");
+
+            var plantId = requestModel.Context?.Plant ?? "unknown";
+            var sfcId = requestModel.Context?.Sfc ?? "unknown";
+            log.LogDebug($"Received message for plant {plantId} and SFC {sfcId}");
+
+            requestModel.Context.Source = "DME";
+            requestModel.Context.InspectionViewName = "default";
+
+            // Read and conert picture from blob storage
+            Stream pictureBlob = Util.Storage.ReadPicture(binder, log, requestModel.FileName).Result;
+            MemoryStream stream = new MemoryStream();
+            pictureBlob.CopyTo(stream);  
+		    byte[] imageArray = stream.ToArray();  
+		    string pictureBase64 = Convert.ToBase64String(imageArray);  
+
+            // set base64 encoded picture in response message
+            requestModel.FileContent = pictureBase64;
 
             var dmUri = GetDmUri(plantId, sfcId);
             using HttpClient dmClient = GetConfiguredHttpClient();
-            log.LogInformation($"Successfully created DM client");
+            log.LogDebug($"Successfully created DM client");
 
-            var dmRequestBody = new StringContent(eventHubMessage, System.Text.Encoding.UTF8, "application/json");
-            log.LogInformation($"Sending response to DM via URI {dmUri}.");
+            var dmRequestBody = new StringContent(JsonSerializer.Serialize(requestModel, new JsonSerializerOptions {PropertyNamingPolicy = JsonNamingPolicy.CamelCase}), System.Text.Encoding.UTF8, "application/json");
+            log.LogInformation($"Sending VI results {dmRequestBody.ReadAsStringAsync().Result} to URI {dmUri}");
             var dmResponse = await dmClient.PostAsync(dmUri, dmRequestBody);
             log.LogInformation($"Response code from DM: {dmResponse.StatusCode}.");
-            log.LogInformation($"Response body from DM: {dmResponse.Content.ReadAsStringAsync().Result}.");
+            log.LogDebug($"Response body from DM: {dmResponse.Content.ReadAsStringAsync().Result}.");
 
         }
 

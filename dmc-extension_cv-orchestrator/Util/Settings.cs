@@ -18,15 +18,18 @@ namespace DmcExtension.CvOrchestrator.Util
         public static string DmOAuthClientId => lazyDmOAuthClientId.Value;
         private static Lazy<string> lazyDmOAuthClientSecret = new Lazy<string>(InitializeFromEnvironmentVariable("DM_OAUTH_CLIENT_SECRET"));
         public static string DmOAuthClientSecret => lazyDmOAuthClientSecret.Value;
+        #nullable enable
+
         private static Lazy<string> lazyDmInspectionLogEndpoint = new Lazy<string>(InitializeFromEnvironmentVariable("DM_INSPECTION_LOG_ENDPOINT"));
         public static string DmInspectionLogEndpoint => lazyDmInspectionLogEndpoint.Value;
         public static Lazy<string> lazyPictureStorageAccountEndpoint = new Lazy<string>(InitializeFromEnvironmentVariable("PICTURE_STORAGE_ACCOUNT_ENDPOINT"));
         public static string PictureStorageAccountEndpoint => lazyPictureStorageAccountEndpoint.Value;
-        public static string PictureBlobContainerName = "raw-pictures";
+        public static string VIPictureBlobContainerName = "raw-pictures";
+        public static string MockedCameraPicturesContainerName = "pictures";
 
         private static string InitializeFromEnvironmentVariable(string variableName)
         {
-            string? retVal = Environment.GetEnvironmentVariable(variableName);
+            var retVal = Environment.GetEnvironmentVariable(variableName);
             if (retVal == null)
                 Console.WriteLine($"Environment variable {variableName} must be specified.");
             return retVal;

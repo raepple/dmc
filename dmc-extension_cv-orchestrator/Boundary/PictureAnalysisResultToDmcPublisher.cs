@@ -15,17 +15,16 @@ namespace DmcExtension.CvOrchestrator.Boundary
     public static class PictureAnalysisResultToDmcPublisher
     {
         [FunctionName("PictureAnalysisResultToDmcPublisher")]
-        public async static Task PictureAnalysisResultToDmcPublisherFromEventHub(
+        public static async Task PictureAnalysisResultToDmcPublisherFromEventHub(
             [EventHubTrigger("picture-analysis-results", Connection = "EventHubConnection", ConsumerGroup = "to-dmc-publisher")] string eventHubMessage,
             IBinder binder,
             ILogger log)
         {
             log.LogInformation("C# EventHub trigger function (PictureAnalysisResultToDmcPublisherFromEventHub) processed a request.");
-            
-            // TODO: Validate request
-            var requestModel = JsonSerializer.Deserialize<PictureAnalysisRequestModel>(eventHubMessage, new JsonSerializerOptions(JsonSerializerDefaults.Web));
-            log.LogInformation($"Raw message from EventHub: {requestModel}.");
+            log.LogInformation($"Raw message from EventHub: {eventHubMessage}.");
 
+            var requestModel = JsonSerializer.Deserialize<PictureAnalysisRequestModel>(eventHubMessage, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            
             var plantId = requestModel.Context?.Plant ?? "unknown";
             var sfcId = requestModel.Context?.Sfc ?? "unknown";
             log.LogDebug($"Received message for plant {plantId} and SFC {sfcId}");
@@ -33,26 +32,39 @@ namespace DmcExtension.CvOrchestrator.Boundary
             requestModel.Context.Source = "DME";
             requestModel.Context.InspectionViewName = "default";
 
+            // set callback to null
+            requestModel.Callback = null;
+
+            // Stringify bounding box JSON
+            for (int i = 0; i < requestModel.Predictions.Count; i++)
+            {
+                string stringyfiedBoundingBox = JsonSerializer.Serialize(requestModel.Predictions[i].PredictionBoundingBoxCoordsObj, new JsonSerializerOptions {PropertyNamingPolicy = JsonNamingPolicy.CamelCase});
+                requestModel.Predictions[i].PredictionBoundingBoxCoords = stringyfiedBoundingBox;
+                log.LogDebug($"Stringified bounding box: {stringyfiedBoundingBox}");
+                requestModel.Predictions[i].PredictionBoundingBoxCoordsObj = null;
+            }
+
+            string dmRequestWithoutFileContent = JsonSerializer.Serialize(requestModel, new JsonSerializerOptions {PropertyNamingPolicy = JsonNamingPolicy.CamelCase, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping});
+            log.LogDebug($"DM request without file content: {dmRequestWithoutFileContent}");
+
             // Read and conert picture from blob storage
-            Stream pictureBlob = Util.Storage.ReadPicture(binder, log, requestModel.FileName).Result;
+            var fileStream = Util.Storage.ReadPictureAsync(binder, log, Settings.VIPictureBlobContainerName, requestModel.FileName).Result;
             MemoryStream stream = new MemoryStream();
-            pictureBlob.CopyTo(stream);  
-		    byte[] imageArray = stream.ToArray();  
-		    string pictureBase64 = Convert.ToBase64String(imageArray);  
+            fileStream.CopyTo(stream);  
+            byte[] pictureArray = stream.ToArray();  
 
             // set base64 encoded picture in response message
-            requestModel.FileContent = pictureBase64;
+            requestModel.FileContent = Convert.ToBase64String(pictureArray);;
 
             var dmUri = GetDmUri(plantId, sfcId);
             using HttpClient dmClient = GetConfiguredHttpClient();
             log.LogDebug($"Successfully created DM client");
 
-            var dmRequestBody = new StringContent(JsonSerializer.Serialize(requestModel, new JsonSerializerOptions {PropertyNamingPolicy = JsonNamingPolicy.CamelCase}), System.Text.Encoding.UTF8, "application/json");
+            var dmRequestBody = new StringContent(JsonSerializer.Serialize(requestModel, new JsonSerializerOptions {PropertyNamingPolicy = JsonNamingPolicy.CamelCase, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping}), System.Text.Encoding.UTF8, "application/json");
             log.LogInformation($"Sending VI results {dmRequestBody.ReadAsStringAsync().Result} to URI {dmUri}");
             var dmResponse = await dmClient.PostAsync(dmUri, dmRequestBody);
             log.LogInformation($"Response code from DM: {dmResponse.StatusCode}.");
             log.LogDebug($"Response body from DM: {dmResponse.Content.ReadAsStringAsync().Result}.");
-
         }
 
         private static Uri GetDmUri(string plantId, string sfcId) {

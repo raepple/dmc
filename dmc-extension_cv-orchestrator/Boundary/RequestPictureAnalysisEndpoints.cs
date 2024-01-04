@@ -45,7 +45,6 @@ namespace DmcExtension.CvOrchestrator.Boundary
             ILogger log)
         {
             try {
-                // TODO: Validate request
                 var requestModel = JsonSerializer.Deserialize<PictureAnalysisRequestModel>(requestBody, new JsonSerializerOptions(JsonSerializerDefaults.Web));
                 var plantId = requestModel.Context?.Plant ?? "unknown";
                 var fileContent = Convert.FromBase64String(requestModel.FileContent);
@@ -54,7 +53,8 @@ namespace DmcExtension.CvOrchestrator.Boundary
                 var timeStamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
                 var fileName = $"{plantId}_{timeStamp}.jpg";
 
-                var attribute = new BlobAttribute($"{Settings.PictureBlobContainerName}/{fileName}", FileAccess.Write)
+                // Upload camera picture to blob storage
+                var attribute = new BlobAttribute($"{Settings.VIPictureBlobContainerName}/{fileName}", FileAccess.Write)
                 {
                     Connection = "StorageAccountExtension"
                 };
@@ -63,6 +63,8 @@ namespace DmcExtension.CvOrchestrator.Boundary
                 {
                     blob.Write(fileContent);
                 }
+
+                log.LogInformation($"Uploaded camera picture to VI blob storage: {fileName}");
 
                 // Add the file name to the request model
                 requestModel.FileContent = null;

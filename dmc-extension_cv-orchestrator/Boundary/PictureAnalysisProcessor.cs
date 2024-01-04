@@ -1,14 +1,15 @@
 using System;
-using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Azure.Messaging.EventHubs;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using Microsoft.Azure.CognitiveServices.Vision.CustomVision.Prediction;
 using DmcExtension.CvOrchestrator.Util;
 using System.Collections.Generic;
+using System.IO;
+using DmcExtension.CvOrchestrator.Model;
+using System.Text;
 
 namespace DmcExtension.CvOrchestrator.Boundary
 {
@@ -35,42 +36,37 @@ namespace DmcExtension.CvOrchestrator.Boundary
             try
             {
                 log.LogInformation("C# EventHub trigger function (PictureAnalysisProcessorFromEventHub) processed a request.");
-
-                // TODO: Validate request body, invalid requests should be dropped.
-                var messageJson = JsonNode.Parse(eventHubMessage)!.AsObject();
+                log.LogInformation($"Raw message from EventHub: {eventHubMessage}.");
+                var requestModel = JsonSerializer.Deserialize<PictureAnalysisRequestModel>(eventHubMessage, new JsonSerializerOptions(JsonSerializerDefaults.Web));
                 
-                // Read picture from blob storage
-                string fileName = messageJson?["FileName"]?.ToString();
-                Stream pictureBlob = Util.Storage.ReadPicture(binder, log, fileName).Result;
+                // Download picture from blob storage
+                Stream fileStream = Util.Storage.ReadPictureAsync(binder, log, Settings.VIPictureBlobContainerName, requestModel.FileName).Result;
 
                 // Call Custom Vision Service to get predictions
-                var imagePrediction = CustomVisionPredictionClient.DetectImage(new System.Guid(Settings.CustomVisionProjectGuid), Settings.CustomVisionModelName, pictureBlob);
+                var imagePrediction = CustomVisionPredictionClient.DetectImage(new System.Guid(Settings.CustomVisionProjectGuid), Settings.CustomVisionModelName, fileStream);
                 log.LogInformation("Predictions received from Custom Vision Service");
 
                 // Map predictions to DMC data structure.
-                //TODO: What happens if we have no predictions?
-                //TODO: Do we want to filter out predictions with low probability?
-                List<object> predictions = new List<object>();
+                // TODO: What happens if we have no predictions?
+                // TODO: Do we want to filter out predictions with low probability?
+                List<PictureAnalysisPredictionModel> predictions = new List<PictureAnalysisPredictionModel>();
                 foreach (var p in imagePrediction.Predictions)
                 {
-                    predictions.Add(new
+                    predictions.Add(new PictureAnalysisPredictionModel
                     {
-                        predictionClass = GetDmcPredictionClass(p.TagName),
-                        ncCode = GetDmcNcCode(p.TagName),
-                        predictionScore = p.Probability,
-                        predictionBoundingBoxCoords = GetPredictionBoundingBoxCoordsAsJsonString(p)
+                        PredictionClass = GetDmcPredictionClass(p.TagName),
+                        NcCode = GetDmcNcCode(p.TagName),
+                        PredictionScore = p.Probability,
+                        PredictionBoundingBoxCoordsObj = GetPredictionBoundingBoxCoordinates(p)
                     });
                     log.LogInformation($"Non-conformance found with prediction value {p.Probability}");
                 }
-                messageJson.Add("predictions", JsonValue.Parse(JsonSerializer.Serialize(predictions)));
+                requestModel.Predictions = predictions;
 
                 // Forward message (with predictions) to Event Hub.
-                var withPrediction = JsonSerializer.Serialize(messageJson, new JsonSerializerOptions
-                {
-                    WriteIndented = true,
-                    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-                });
-                await outputEvents.AddAsync(new EventData(withPrediction));
+                var json = JsonSerializer.Serialize(requestModel);
+                var eventData = new EventData(Encoding.UTF8.GetBytes(json));
+                await outputEvents.AddAsync(eventData);
             }
             catch (Exception e)
             {
@@ -78,18 +74,17 @@ namespace DmcExtension.CvOrchestrator.Boundary
             }
         }
 
-        private static string GetPredictionBoundingBoxCoordsAsJsonString(Microsoft.Azure.CognitiveServices.Vision.CustomVision.Prediction.Models.PredictionModel p)
+        private static List<PictureAnalysisPredictionBoundingBoxCoordinatesModel> GetPredictionBoundingBoxCoordinates(Microsoft.Azure.CognitiveServices.Vision.CustomVision.Prediction.Models.PredictionModel p)
         {
-            object predictions = new
-            {
-                type = "rect",
-                x = p.BoundingBox.Left,
-                y = p.BoundingBox.Top,
-                w = p.BoundingBox.Width,
-                h = p.BoundingBox.Height,
-                score = p.Probability
+           var boundingBox = new PictureAnalysisPredictionBoundingBoxCoordinatesModel { 
+                Type = "rect",
+                X = p.BoundingBox.Left,
+                Y = p.BoundingBox.Top,
+                W = p.BoundingBox.Width,
+                H = p.BoundingBox.Height,
+                Score = p.Probability
             };
-            return JsonSerializer.Serialize(new object[] { predictions });
+            return new List<PictureAnalysisPredictionBoundingBoxCoordinatesModel> { boundingBox };
         }
 
         //TODO: Avoid hardcoding prediction classes
@@ -103,7 +98,6 @@ namespace DmcExtension.CvOrchestrator.Boundary
                     return "UNKNOWN";
             }
         }
-
 
         //TODO: Avoid hardcoding NC codes
         private static string GetDmcNcCode(string cvPredictionTagName)

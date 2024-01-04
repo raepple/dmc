@@ -58,6 +58,7 @@ namespace DmcExtension.CvOrchestrator.Boundary
         [OpenApiResponseWithBody(System.Net.HttpStatusCode.OK, "text/plain", typeof(string))]
         public static async Task<IActionResult> TakePictureRequestBase64(
             [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req,
+            IBinder binder,
             ILogger log)
         {
             log.LogInformation("C# HTTP trigger function (TakePictureRequestBase64) processed a request.");
@@ -66,10 +67,12 @@ namespace DmcExtension.CvOrchestrator.Boundary
             {
                 var (plantId, sfcId) = GetPlantAndSfcFromRequest(req);
                 var demoImageBlobName = PickDemoPicture(plantId, sfcId);
-                log.LogInformation($"Picture file name: {demoImageBlobName}");
-                var (fileContent, mimeType) = await GetBlobContent(demoImageBlobName);
+                log.LogInformation($"Mocked camera picture file name: {demoImageBlobName}");
 
-                return new OkObjectResult(Convert.ToBase64String(fileContent));
+                var fileStream = await Util.Storage.ReadPictureAsync(binder, log, Settings.MockedCameraPicturesContainerName, demoImageBlobName);
+                MemoryStream stream = new MemoryStream();
+                fileStream.CopyTo(stream);
+                return new OkObjectResult(Convert.ToBase64String(stream.ToArray()));
             }
             catch (Exception e)
             {
@@ -99,18 +102,6 @@ namespace DmcExtension.CvOrchestrator.Boundary
             int index = intHash % BlobNames.Value.Count;
             var demoImageBlobName = BlobNames.Value[index];
             return demoImageBlobName;
-        }
-
-        private static async Task<Tuple<byte[], string>> GetBlobContent(string blobName)
-        {
-            var blobClient = BlobContainerClient.Value.GetBlobClient(blobName);
-            using (var readStream = await blobClient.OpenReadAsync())
-            {
-                var memoryStream = new MemoryStream();
-                readStream.CopyTo(memoryStream);
-                // TODO: Replace fixed mime type with actual mime type from blob metadata.
-                return new Tuple<byte[], string>(memoryStream.ToArray(), "image/jpeg");
-            }
         }
     }
 }

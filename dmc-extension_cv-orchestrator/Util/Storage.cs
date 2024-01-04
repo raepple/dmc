@@ -8,14 +8,14 @@ namespace DmcExtension.CvOrchestrator.Util
 {
     public static class Storage
     {        
-        public static async Task<Stream> ReadPicture(IBinder binder, ILogger log, String fileName)
+        public static async Task<Stream> ReadPictureAsync(IBinder binder, ILogger log, String blobContainerName, String fileName)
         {
-            var attribute = new BlobAttribute($"{Settings.PictureBlobContainerName}/{fileName}", FileAccess.Read);
+            var attribute = new BlobAttribute($"{blobContainerName}/{fileName}", FileAccess.Read);
             attribute.Connection = "StorageAccountExtension";
 
             Stream blob = await binder.BindAsync<Stream>(attribute);
             log.LogInformation($"Downloaded {fileName} from blob storage.");
-
+	  
             return blob;
         }
     }

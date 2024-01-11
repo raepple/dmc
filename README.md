@@ -1,2 +1,3 @@
-# dmc
-SAP Digital Manufacturing extension on Azure for visual inspection
+# Code for SAP DM Visual Inspection extension on Microsoft Azure
+This repository contains the application and infrastructure code for the SAP Digital Manufacturing extension on Azure for a visual inspection scenario.
+Check out the associated blog posts [part I](https://blogs.sap.com/2024/01/10/extending-sap-digital-manufacturing-with-azure-part-i-reference-architecture/) and [part II](https://blogs.sap.com/2024/01/10/extending-sap-digital-manufacturing-with-azure-part-ii-applying-the-reference-architecture-to-a-visual-inspection-scenario/) for more details on the scenario, the setup with Terraform, and deployment of the Azure Functions. 

@@ -38,6 +38,8 @@ resource "azurerm_windows_function_app" "fn" {
   service_plan_id      = azurerm_service_plan.sp.id
 
   functions_extension_version = "~4"
+
+  ftp_publish_basic_authentication_enabled = false
   
   identity {
     type = "SystemAssigned"
@@ -49,6 +51,7 @@ resource "azurerm_windows_function_app" "fn" {
     application_stack {
       dotnet_version = var.dotnet_version
     }
+    always_on = true
   }
 
   app_settings = local.appsettings
